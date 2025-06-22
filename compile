@@ -1,0 +1,1 @@
+qcc -Wall -O2 BaseFlow.c -o main_exe -L$BASILISK/gl -lglutils -lfb_tiny -lm
