@@ -36,9 +36,8 @@ int main(){
     mu1 = dyn_visc_1/dyn_visc_2;  // Scaled dynamic viscosity of phase 1  
     mu2 = 1.0;                    // Scaled dynamic viscosity of phase 2  
 
-    size (pipe_length*diameter);                  // domain size 
-    origin (-(pipe_length/2)*diameter, -(pipe_length/2)*diameter,
-        -(pipe_length/2)*diameter);             // center point
+    dimensions (nx = diameter+0.2, ny = diameter+0.2, nz = pipe_length);    // domain size
+    origin (-(diameter+0.2)/2, -(diameter+0.2)/2,0);            // center point
 
     double U_m = U1s + U2s;                                          // mixture velocity 
     double FROUDE = (We/Eo)*((density_1-density_2)/density_2);       // Froude Number 
