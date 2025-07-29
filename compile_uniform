@@ -1,1 +1,0 @@
-qcc -Wall -O2 BaseFlowConst.c -o main_exe_uniform -L$BASILISK/gl -lglutils -lfb_tiny -lm

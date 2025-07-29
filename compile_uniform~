@@ -1,1 +1,0 @@
-CC99='mpicc -std=c99' qcc -Wall -O2 -D_MPI=1 BaseFlowConst.c -o main_exe_uniform -L$BASILISK/gl -lglutils -lfb_tiny -lm
