@@ -10,29 +10,35 @@
 #include "maxruntime.h"
 #include "navier-stokes/perfs.h"
 
+// Constant Parameter
+#define density_ratio 1000.0  // Density ratio 
+#define viscosity_ratio 54.0  // Viscosity ratio
+#define eotvos 79.0           // Eotvos number
+#define diameter 1.0          // pipe diameter 
+#define pipe_length 13.0      // pipe length (Shouldn't be integer - interface intersect the grid)
+
 // Input Parameter
-double U1s = 0.023097;          // superficial velocity of phase 1 (heavier phase)                
-double U2s = 0.3217195;         // superficial velocity of phase 2 (lighter phase)
-double h_L_D = 0.2;             // Liquid height to diameter ratio
-double pressure_drop = -10.0;    // Pressure drop correponding to the liquid holdup
-double diameter = 1.0;          // pipe diameter 
-double pipe_length = 3.0;       // pipe length (Shouldn't be integer - interface intersect the grid)
-double Eo = 40.0;               // Eotvos number
-double We = 4.0;                // Weber number 
-double density_1 = 1000.0;      // Water density 
-double density_2 = 1.0;         // Air density 
-double dyn_visc_1 = 0.001;      // Water dynamic viscosity 
-double dyn_visc_2 = 1.818e-5;   // Air dynamic viscosity 
-double U_m;
-double FROUDE;
+double froude_liquid = 0.02;     // Froude number on liquid phase
+double froude_gas = 4.12;        // Froude number on gas phase
+double reynold_liquid = 240.0;   // Reynold number on liquid phase
+double reynold_gas = 3284.0;     // Reynold number on gas phase
 
-// Simulation Parameter
-int LEVEL = 7;                  // Level of grid refinement 
-scalar f0[];                    // volume fraction initially 
-face vector av[];               // forcing term via pressure drop 
+// Guessing value 
+double h_L_D_init = 0.2;             // Liquid height to diameter ratio
+double forcing = 0.1;                   // forcing term
+double U1s_init = 0.01;         // Initialize liquid superficial velocity
+double U2s_init = 2.0;          // Inititalize gas superficial velocity 
 
-// Function 
-double liquid_area();  
+// Simulation Parameter 
+scalar f0[];                    // volume fraction initially
+double U_LS;
+double U_GS;
+double liquid_area;
+double froude_liquid_instant;
+
+// Function declaration
+double calculate_froude_liquid(double U_LS_local);
+void calculate_superficial_vel(double *U_LS, double *U_GS, double *liquid_area);
 
 // Boundary Condition 
 // No slip, no penetration BC on the embedded
@@ -41,24 +47,20 @@ u.t[embed] = dirichlet(0.);
 u.r[embed] = dirichlet(0.);
 
 int main(){
-
-    dimensions (nx = diameter*4.0, ny = diameter*4.0, nz = pipe_length);    // domain size 
-    init_grid (32);               // grid number without refinement 
-
-    rho1 = density_1/density_2;   // Scaled density of phase 1  
-    rho2 = 1.0;                   // Scaled density of phase 2 
-    mu1 = dyn_visc_1/dyn_visc_2;  // Scaled dynamic viscosity of phase 1  
-    mu2 = 1.0;                    // Scaled dynamic viscosity of phase 2  
+  size(pipe_length);                 // setting the physical size if the x-dir (axial dir)
+    dimensions (nx = pipe_length, ny = 1.0, nz = 1.0);    // domain size 
+    init_grid (512);               // grid number without refinement
+    
+    rho1 = density_ratio;         // Scaled density of phase 1 (Liquid)  
+    rho2 = 1.0;                   // Scaled density of phase 2 (Gas)
+    mu1 = viscosity_ratio;        // Scaled dynamic viscosity of phase 1 (Liquid)  
+    mu2 = 1.0;                    // Scaled dynamic viscosity of phase 2 (Gas)
            
-    origin (-diameter/2.0, -diameter/2.0,0);            // center point
+    origin (0, -diameter/2.0, -diameter/2.0);      // center point
+    FROUDE = froude_liquid;                        // Initialize Froude Number 
+    f.sigma = 1./eotvos;                           // Surface tension coefficient sigma 
 
-    U_m = U1s + U2s;                                          // mixture velocity 
-    FROUDE = (We/Eo)*((density_1-density_2)/density_2);       // Froude Number 
-    f.sigma = 1./We;                           // Surface tension coefficient sigma 
-//    G.y = - sq(U_m/FROUDE)/(diameter);         // gravitational acceleration
-    a = av;                        // acceleration term in NS eq
-
-    periodic(front);               // Periodic BC at the axial direction
+    periodic(right);               // Periodic BC at the axial direction
     run();
 }
 
@@ -67,31 +69,34 @@ event init (t = 0) {
   solid(cs,fs, -sq(x) - sq(y) + pow(diameter/2,2));         // Define solid pipe geometry
   fractions_cleanup (cs, fs);
 
-  fraction(f0, y<(h_L_D - diameter/2) ? 
+  fraction(f0, y < (h_L_D_init - diameter/2) ? 
           -sq(x) - sq(y) + pow(diameter/2,2) :-1);    // initialize liquid holdup
 
   foreach() {
     f[] = f0[];                         // Initialize volume fraction at initial time 
-    u.z[] = U1s*f0[] + U2s*(1-f0[]);    // Initialize inlet BC at initial time 
+    u.x[] = U1s_init*f[] + U2s_init*(1-f[]);    // Initialize inlet BC at initial time 
   }
 
-  view(camera="front",fov=0,tx=0,ty=0);
+  view(camera="left",fov=0,tx=0,ty=0);
   clear();
   draw_vof("cs",filled=-1,fc={1,1,1});
   draw_vof("f0",filled=-1,fc={1,0,1});
   cells();
-  save("grid_t0.jpg"); 
+  save("grid_t0_left.jpg"); 
 
+  view(camera="top",fov=0,tx=0,ty=0);
+  clear();
+  draw_vof("cs",filled=-1,fc={1,1,1});
+  draw_vof("f0",filled=-1,fc={1,0,1});
+  cells();
+  save("grid_t0_top.jpg"); 
+  
   view(fov=0,tx=0,ty=0, theta = 3.14/2 + 0.5,  phi = 0.4,  psi = 0.);
   clear();
   draw_vof("f",filled=-1,fc={1,0,1});
   cells();
-  save("grid_1.jpg"); 
+  save("grid_t0_side.jpg"); 
   printf("Hi!");    
-}
-
-event logfile (i++){
-  fprintf (stderr, "%d %g %d %d\n", i, t, mgp.i, mgu.i);
 }
 
 event solute_movie (i += 2) {
@@ -104,7 +109,7 @@ event solute_movie (i += 2) {
     vel[] = sqrt(sq(u.x[])+sq(u.y[]));
   squares("vel",min=0.,max=1.,map=jet);
   cells();
-  save("c.mp4");
+  save("velocity_xy.mp4");
 
   view(camera="front",fov=0,tx=0,ty=0);
   clear();
@@ -120,25 +125,41 @@ event solute_movie (i += 2) {
   view(fov=0,tx=0,ty=0, theta =-(3.14/2 + 0.2) ,  phi = 0.4,  psi = 0.);
   clear();
   draw_vof("f", lw=3,lc={1,1,0}, min = -0.1, max = 0.1);
-  save("yayayaya.mp4");
+  save("front_vof_vid.mp4");
 }
 
 event end(i=10){
 }
 
-double liquid_area() {
-    double Area = 0.;
-    foreach_boundary (front){
-        Area += f[] * sq(Delta);
-    }
-  return Area;
+event acceleration (i++){
+  calculate_superficial_vel(&U_LS, &U_GS, &liquid_area);
+  froude_liquid_instant = calculate_froude_liquid(U_LS);
+  face vector av = a;                        // acceleration term in vertical direction
+  foreach_face(z){
+    av.z[] -= sq(U_LS/froude_liquid_instant)/(diameter);         // gravitational acceleration
+  }
+  foreach_face(y){
+    av.y[] += forcing                        // forcing term 
+  }
 }
 
-event acceleration (i++){ 
-  foreach_face(y){
-    av.y[] = - sq(U_m/FROUDE)/(diameter);         // gravitational acceleration
-  }
-  foreach_face(z){
-    av.z[] = pressure_drop;
+event logfile (i += 2) {
+  fprintf(stderr, "t = %g, U_LS = %g, Fr = %g, liquid area = %g\n",
+          t, U_LS, froude_liquid_instant, liquid_area);
+}
+
+double calculate_froude_liquid(double U_LS_local) {
+  return U_LS_local / sqrt(9.81 * diameter);
+}
+  
+void calculate_superficial_vel(double *U_LS, double *U_GS, double *liquid_area) {
+  *U_LS = 0.0;
+  *U_GS = 0.0;
+  *liquid_area = 0.0;
+
+  foreach_boundary(left) {
+    *U_LS += f[] * u.x[] * sq(Delta) / (M_PI * sq(0.5 * diameter));
+    *U_GS += (1. - f[]) * u.x[] * sq(Delta) / (M_PI * sq(0.5 * diameter));
+    *liquid_area += f[] * sq(Delta);
   }
 }
