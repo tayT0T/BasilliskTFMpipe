@@ -15,7 +15,7 @@
 #define viscosity_ratio 54.0  // Viscosity ratio
 #define eotvos 79.0           // Eotvos number
 #define diameter 1.0          // pipe diameter 
-#define pipe_length 3.0      // pipe length (Shouldn't be integer - interface intersect the grid)
+#define pipe_length 14.0      // pipe length (Shouldn't be integer - interface intersect the grid)
 
 // Input Parameter
 double froude_liquid = 0.02;     // Froude number on liquid phase
@@ -48,15 +48,16 @@ u.r[embed] = dirichlet(0.);
 
 int main(){
   size(pipe_length);                 // setting the physical size if the x-dir (axial dir)
-    dimensions (nx = pipe_length, ny = diameter * 2., nz = diameter * 2.);    // domain size 
-    init_grid (512);               // grid number without refinement
+    dimensions (nx = pipe_length/2.0, ny = diameter, nz = diameter);    // domain size 
+    init_grid (896);               // grid number without refinement
     
     rho1 = density_ratio;         // Scaled density of phase 1 (Liquid)  
     rho2 = 1.0;                   // Scaled density of phase 2 (Gas)
     mu1 = viscosity_ratio;        // Scaled dynamyic viscosity of phase 1 (Liquid)  
     mu2 = 1.0;                    // Scaled dynamic viscosity of phase 2 (Gas)
            
-    origin (0, -(diameter)/2.0, -(diameter)/2.0);      // center point
+    //    origin (0, -(diameter)/2.0, -(diameter)/2.0);      // center point
+    origin (0, -diameter, -diameter);
     FROUDE = froude_liquid;                        // Initialize Froude Number 
     f.sigma = (1./eotvos) * (density_ratio - 1.0);                           // Surface tension coefficient sigma 
 
@@ -67,7 +68,6 @@ int main(){
 // Initial condition
 event init (t = 0) {
   solid(cs,fs, -sq(y) - sq(z) + pow(diameter/2,2));         // Define solid pipe geometry
-  fractions_cleanup (cs, fs);
 
   fraction(f0, y < (h_L_D_init - diameter/2) ? 
           -sq(y) - sq(z) + pow(diameter/2,2) :-1);    // initialize liquid holdup
@@ -98,7 +98,7 @@ event init (t = 0) {
   save("grid_t0_side.jpg"); 
   printf("Hi!");    
 }
-
+/*
 event solute_movie (i += 2) {
   view(camera="front",fov=0,tx=0,ty=0);
   clear();
@@ -127,8 +127,8 @@ event solute_movie (i += 2) {
   draw_vof("f", lw=3,lc={1,1,0}, min = -0.1, max = 0.1);
   save("front_vof_vid.mp4");
 }
-
-event end(i=10){
+*/
+event end(i=2){
 }
 
 event acceleration (i++){
@@ -141,7 +141,7 @@ event acceleration (i++){
   }
 }
 
-event logfile (i += 2) {
+event logfile (i ++) {
   calculate_superficial_vel(&U_LS, &U_GS, &liquid_area);
   fprintf(stderr, "t = %g, U_LS = %g, U_GS = %g, liquid area = %g\n",
           t, U_LS, U_GS, liquid_area);
