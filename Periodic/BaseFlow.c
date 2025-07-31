@@ -15,7 +15,7 @@
 #define viscosity_ratio 54.0  // Viscosity ratio
 #define eotvos 79.0           // Eotvos number
 #define diameter 1.0          // pipe diameter 
-#define pipe_length 2.0      // pipe length (Shouldn't be integer - interface intersect the grid)
+#define pipe_length 3.0      // pipe length (Shouldn't be integer - interface intersect the grid)
 
 // Input Parameter
 double froude_liquid = 0.02;     // Froude number on liquid phase
