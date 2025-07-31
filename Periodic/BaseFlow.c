@@ -9,7 +9,6 @@
 #include "lambda2.h"
 #include "maxruntime.h"
 #include "navier-stokes/perfs.h"
-#include "common.h"
 
 // Constant Parameter
 #define density_ratio 1000.0  // Density ratio 
@@ -36,6 +35,7 @@ double U_LS;
 double U_GS;
 double liquid_area;
 double froude_liquid_instant;
+double FROUDE;
 
 // Function declaration
 double calculate_froude_liquid(double U_LS_local);
