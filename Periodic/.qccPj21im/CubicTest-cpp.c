@@ -1,3 +1,19 @@
+@if _XOPEN_SOURCE < 700
+  @undef _XOPEN_SOURCE
+  @define _XOPEN_SOURCE 700
+@endif
+@if _GNU_SOURCE
+@include <stdint.h>
+@include <string.h>
+@include <fenv.h>
+@endif
+#define _CATCH
+#define dimension 3
+#define BGHOSTS 2
+#include "common.h"
+#ifndef BASILISK_HEADER_0
+#define BASILISK_HEADER_0
+#line 1 "CubicTest.c"
 #include "grid/multigrid3D.h"
 #include "embed.h"
 #include "navier-stokes/centered.h"
@@ -38,6 +54,7 @@ double froude_liquid_instant;
 double FROUDE;
 
 // Function declaration
+double calculate_froude_liquid(double U_LS_local);
 void calculate_superficial_vel(double *U_LS, double *U_GS, double *liquid_area);
 
 // Boundary Condition 
@@ -47,9 +64,9 @@ u.t[embed] = dirichlet(0.);
 u.r[embed] = dirichlet(0.);
 
 int main(){
-  size(pipe_length);                 // setting the physical size if the x-dir (axial dir)
-    dimensions (nx = pipe_length, ny = diameter * 2., nz = diameter * 2.);    // domain size 
-    init_grid (512);               // grid number without refinement
+    size(pipe_length);                 // setting the physical size if the x-dir (axial dir)
+    dimensions (nx = diameter * 2., ny = diameter * 2., nz = diameter * 2.);    // domain size 
+    init_grid (64);               // grid number without refinement
     
     rho1 = density_ratio;         // Scaled density of phase 1 (Liquid)  
     rho2 = 1.0;                   // Scaled density of phase 2 (Gas)
@@ -158,3 +175,5 @@ void calculate_superficial_vel(double *U_LS, double *U_GS, double *liquid_area) 
     *liquid_area += f[] * sq(Delta);
   }
 }
+
+#endif
