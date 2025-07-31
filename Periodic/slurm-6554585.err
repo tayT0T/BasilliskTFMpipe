@@ -15,3 +15,7 @@ src/output.h:450: warning: cannot find 'ppm2mp4' or 'ffmpeg'/'avconv'
 src/output.h:450: warning: falling back to raw PPM outputs
 t = 0, U_LS = 0, U_GS = 0, liquid area = 0
 t = 0.000229173, U_LS = 0, U_GS = 0, liquid area = 0
+t = 0.00071936, U_LS = 0, U_GS = 0, liquid area = 0
+t = 0.00142526, U_LS = 0, U_GS = 0, liquid area = 0
+t = 0.00230944, U_LS = 0, U_GS = 0, liquid area = 0
+slurmstepd: error: *** JOB 6554585 ON tscc-gpu-m10-05 CANCELLED AT 2025-07-31T14:59:20 ***
