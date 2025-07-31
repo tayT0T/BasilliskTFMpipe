@@ -1,3 +1,19 @@
+@if _XOPEN_SOURCE < 700
+  @undef _XOPEN_SOURCE
+  @define _XOPEN_SOURCE 700
+@endif
+@if _GNU_SOURCE
+@include <stdint.h>
+@include <string.h>
+@include <fenv.h>
+@endif
+#define _CATCH
+#define dimension 3
+#define BGHOSTS 2
+#include "common.h"
+#ifndef BASILISK_HEADER_0
+#define BASILISK_HEADER_0
+#line 1 "BaseFlow.c"
 #include "grid/multigrid3D.h"
 #include "embed.h"
 #include "navier-stokes/centered.h"
@@ -9,14 +25,13 @@
 #include "lambda2.h"
 #include "maxruntime.h"
 #include "navier-stokes/perfs.h"
-#include "common.h"
 
 // Constant Parameter
 #define density_ratio 1000.0  // Density ratio 
 #define viscosity_ratio 54.0  // Viscosity ratio
 #define eotvos 79.0           // Eotvos number
 #define diameter 1.0          // pipe diameter 
-#define pipe_length 8.0      // pipe length (Shouldn't be integer - interface intersect the grid)
+#define pipe_length 13.0      // pipe length (Shouldn't be integer - interface intersect the grid)
 
 // Input Parameter
 double froude_liquid = 0.02;     // Froude number on liquid phase
@@ -59,7 +74,7 @@ int main(){
            
     origin (0, -diameter/2.0, -diameter/2.0);      // center point
     FROUDE = froude_liquid;                        // Initialize Froude Number 
-    f.sigma = (1./eotvos) * (density_ratio - 1.0);                           // Surface tension coefficient sigma 
+    f.sigma = 1./eotvos;                           // Surface tension coefficient sigma 
 
     periodic(right);               // Periodic BC at the axial direction
     run();
@@ -143,8 +158,12 @@ event acceleration (i++){
 }
 
 event logfile (i += 2) {
-  fprintf(stderr, "t = %g, U_LS = %g, U_GS = %g, liquid area = %g\n",
-          t, U_LS, U_GS, liquid_area);
+  fprintf(stderr, "t = %g, U_LS = %g, Fr = %g, liquid area = %g\n",
+          t, U_LS, froude_liquid_instant, liquid_area);
+}
+
+double calculate_froude_liquid(double U_LS_local) {
+  return U_LS_local / sqrt(1 * diameter);
 }
   
 void calculate_superficial_vel(double *U_LS, double *U_GS, double *liquid_area) {
@@ -158,3 +177,5 @@ void calculate_superficial_vel(double *U_LS, double *U_GS, double *liquid_area) 
     *liquid_area += f[] * sq(Delta);
   }
 }
+
+#endif

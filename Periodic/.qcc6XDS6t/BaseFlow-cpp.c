@@ -1,3 +1,19 @@
+@if _XOPEN_SOURCE < 700
+  @undef _XOPEN_SOURCE
+  @define _XOPEN_SOURCE 700
+@endif
+@if _GNU_SOURCE
+@include <stdint.h>
+@include <string.h>
+@include <fenv.h>
+@endif
+#define _CATCH
+#define dimension 3
+#define BGHOSTS 2
+#include "common.h"
+#ifndef BASILISK_HEADER_0
+#define BASILISK_HEADER_0
+#line 1 "BaseFlow.c"
 #include "grid/multigrid3D.h"
 #include "embed.h"
 #include "navier-stokes/centered.h"
@@ -9,7 +25,6 @@
 #include "lambda2.h"
 #include "maxruntime.h"
 #include "navier-stokes/perfs.h"
-#include "common.h"
 
 // Constant Parameter
 #define density_ratio 1000.0  // Density ratio 
@@ -158,3 +173,5 @@ void calculate_superficial_vel(double *U_LS, double *U_GS, double *liquid_area) 
     *liquid_area += f[] * sq(Delta);
   }
 }
+
+#endif
