@@ -146,7 +146,31 @@ event logfile (i ++) {
   fprintf(stderr, "t = %g, U_LS = %g, U_GS = %g, liquid area = %g\n",
           t, U_LS, U_GS, liquid_area);
 }
-  
+
+event logNxNy (i++) {
+  int Nx = 0, Ny = 0, Nz = 0;
+
+  int *ix = calloc(1 << depth(), sizeof(int));
+  int *iy = calloc(1 << depth(), sizeof(int));
+  int *iz = calloc(1 << depth(), sizeof(int));
+
+  foreach() {
+    ix[point.i] = 1;
+    iy[point.j] = 1;
+    iz[point.k] = 1;
+  }
+
+  for (int i = 0; i < 1 << depth(); i++) {
+    Nx += ix[i];
+    Ny += iy[i];
+    Nz += iz[i];
+  }
+
+  fprintf(stderr, "%d %g Nx=%d Ny=%d Nz=%d\n", i, t, Nx, Ny, Nz);
+
+  free(ix); free(iy); free(iz);
+}
+
 void calculate_superficial_vel(double *U_LS, double *U_GS, double *liquid_area) {
   *U_LS = 0.0;
   *U_GS = 0.0;
